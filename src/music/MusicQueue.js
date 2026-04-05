@@ -2,11 +2,16 @@ const {
   createAudioPlayer,
   createAudioResource,
   AudioPlayerStatus,
+  StreamType,
   joinVoiceChannel,
   VoiceConnectionStatus,
   entersState,
 } = require('@discordjs/voice');
-const play = require('play-dl');
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+const COOKIE_FILE = path.join(__dirname, '..', '..', 'www.youtube.com_cookies.txt');
 
 class MusicQueue {
   constructor() {
@@ -71,16 +76,35 @@ class MusicQueue {
     this.currentTrack = this.tracks.shift();
 
     try {
-      const url = this.currentTrack.url;
-      console.log('[Debug] URL:', JSON.stringify(url), '| validate:', play.yt_validate(url));
-      const info = await play.video_info(url);
-      const stream = await play.stream_from_info(info);
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type,
+      const ytdlArgs = [
+        '--format', 'bestaudio/best',
+        '--extractor-args', 'youtube:player_client=web_embedded',
+        '--output', '-',
+        '--no-playlist',
+        '--quiet',
+        '--no-warnings',
+      ];
+      if (fs.existsSync(COOKIE_FILE)) {
+        ytdlArgs.push('--cookies', COOKIE_FILE);
+      }
+      ytdlArgs.push(this.currentTrack.url);
+
+      const ytdl = spawn(
+        process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp',
+        ytdlArgs,
+        { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
+      );
+
+      ytdl.on('error', (err) => console.error('[yt-dlp spawn]', err.message));
+      ytdl.stderr.on('data', (data) => console.error('[yt-dlp stderr]', data.toString().trim()));
+      ytdl.on('close', (code) => { if (code !== 0) console.error('[yt-dlp exit]', code); });
+
+      const resource = createAudioResource(ytdl.stdout, {
+        inputType: StreamType.Arbitrary,
       });
       this.player.play(resource);
     } catch (error) {
-      console.error('[Stream Error]', error.message, error.stack?.split('\n')[1]);
+      console.error('[Stream Error]', error.message, '| URL:', this.currentTrack?.url);
       await this._playNext();
     }
   }
