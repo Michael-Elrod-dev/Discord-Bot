@@ -77,7 +77,7 @@ class MusicQueue {
 
     try {
       const ytdlArgs = [
-        '--format', 'bestaudio[ext=webm]/bestaudio/best',
+        '--format', 'bestaudio/best',
         '--output', '-',
         '--no-playlist',
         '--quiet',
