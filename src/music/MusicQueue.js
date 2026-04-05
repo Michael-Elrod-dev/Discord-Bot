@@ -71,13 +71,16 @@ class MusicQueue {
     this.currentTrack = this.tracks.shift();
 
     try {
-      const stream = await play.stream(this.currentTrack.url);
+      const url = this.currentTrack.url;
+      console.log('[Debug] URL:', JSON.stringify(url), '| validate:', play.yt_validate(url));
+      const info = await play.video_info(url);
+      const stream = await play.stream_from_info(info);
       const resource = createAudioResource(stream.stream, {
         inputType: stream.type,
       });
       this.player.play(resource);
     } catch (error) {
-      console.error('[Stream Error]', error.message, '| URL:', this.currentTrack?.url);
+      console.error('[Stream Error]', error.message, error.stack?.split('\n')[1]);
       await this._playNext();
     }
   }
