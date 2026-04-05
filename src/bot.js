@@ -1,21 +1,6 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
 const play = require('play-dl');
-
-function loadYoutubeCookie() {
-  if (process.env.YOUTUBE_COOKIE) return process.env.YOUTUBE_COOKIE;
-  const cookieFile = path.join(__dirname, '..', 'www.youtube.com_cookies.txt');
-  if (!fs.existsSync(cookieFile)) return null;
-  return fs.readFileSync(cookieFile, 'utf8')
-    .split('\n')
-    .filter(line => line && !line.startsWith('#'))
-    .map(line => line.split('\t'))
-    .filter(parts => parts.length >= 7)
-    .map(parts => `${parts[5]}=${parts[6]}`)
-    .join('; ');
-}
 const MusicQueue = require('./music/MusicQueue');
 const commands = require('./commands');
 
@@ -34,19 +19,14 @@ const PREFIX = process.env.PREFIX || '!';
 client.once('clientReady', async () => {
   if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
     try {
-      const token = {
+      await play.setToken({
         spotify: {
           client_id: process.env.SPOTIFY_CLIENT_ID,
           client_secret: process.env.SPOTIFY_CLIENT_SECRET,
           refresh_token: '',
           market: 'US',
         },
-      };
-      const ytCookie = loadYoutubeCookie();
-      if (ytCookie) {
-        token.youtube = { cookie: ytCookie };
-      }
-      await play.setToken(token);
+      });
       console.log('Spotify integration ready.');
     } catch (err) {
       console.warn('Spotify init failed — Spotify links will not work.', err.message);
