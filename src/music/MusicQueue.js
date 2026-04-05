@@ -94,7 +94,9 @@ class MusicQueue {
         { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
       );
 
-      ytdl.on('error', (err) => console.error('[yt-dlp]', err.message));
+      ytdl.on('error', (err) => console.error('[yt-dlp spawn]', err.message));
+      ytdl.stderr.on('data', (data) => console.error('[yt-dlp stderr]', data.toString().trim()));
+      ytdl.on('close', (code) => { if (code !== 0) console.error('[yt-dlp exit]', code); });
 
       const resource = createAudioResource(ytdl.stdout, {
         inputType: StreamType.Arbitrary,
