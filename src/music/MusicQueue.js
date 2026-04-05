@@ -2,16 +2,11 @@ const {
   createAudioPlayer,
   createAudioResource,
   AudioPlayerStatus,
-  StreamType,
   joinVoiceChannel,
   VoiceConnectionStatus,
   entersState,
 } = require('@discordjs/voice');
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-
-const COOKIE_FILE = path.join(__dirname, '..', '..', 'www.youtube.com_cookies.txt');
+const play = require('play-dl');
 
 class MusicQueue {
   constructor() {
@@ -76,35 +71,13 @@ class MusicQueue {
     this.currentTrack = this.tracks.shift();
 
     try {
-      const ytdlArgs = [
-        '--format', 'bestaudio/best',
-        '--extractor-args', 'youtube:player_client=android',
-        '--output', '-',
-        '--no-playlist',
-        '--quiet',
-        '--no-warnings',
-      ];
-      if (fs.existsSync(COOKIE_FILE)) {
-        ytdlArgs.push('--cookies', COOKIE_FILE);
-      }
-      ytdlArgs.push(this.currentTrack.url);
-
-      const ytdl = spawn(
-        process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp',
-        ytdlArgs,
-        { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
-      );
-
-      ytdl.on('error', (err) => console.error('[yt-dlp spawn]', err.message));
-      ytdl.stderr.on('data', (data) => console.error('[yt-dlp stderr]', data.toString().trim()));
-      ytdl.on('close', (code) => { if (code !== 0) console.error('[yt-dlp exit]', code); });
-
-      const resource = createAudioResource(ytdl.stdout, {
-        inputType: StreamType.Arbitrary,
+      const stream = await play.stream(this.currentTrack.url);
+      const resource = createAudioResource(stream.stream, {
+        inputType: stream.type,
       });
       this.player.play(resource);
     } catch (error) {
-      console.error('[Stream Error]', error.message, '| URL was:', this.currentTrack?.url);
+      console.error('[Stream Error]', error.message, '| URL:', this.currentTrack?.url);
       await this._playNext();
     }
   }
