@@ -1,6 +1,21 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
 const play = require('play-dl');
+
+function loadYoutubeCookie() {
+  if (process.env.YOUTUBE_COOKIE) return process.env.YOUTUBE_COOKIE;
+  const cookieFile = path.join(__dirname, '..', 'www.youtube.com_cookies.txt');
+  if (!fs.existsSync(cookieFile)) return null;
+  return fs.readFileSync(cookieFile, 'utf8')
+    .split('\n')
+    .filter(line => line && !line.startsWith('#'))
+    .map(line => line.split('\t'))
+    .filter(parts => parts.length >= 7)
+    .map(parts => `${parts[5]}=${parts[6]}`)
+    .join('; ');
+}
 const MusicQueue = require('./music/MusicQueue');
 const commands = require('./commands');
 
@@ -27,8 +42,9 @@ client.once('clientReady', async () => {
           market: 'US',
         },
       };
-      if (process.env.YOUTUBE_COOKIE) {
-        token.youtube = { cookie: process.env.YOUTUBE_COOKIE };
+      const ytCookie = loadYoutubeCookie();
+      if (ytCookie) {
+        token.youtube = { cookie: ytCookie };
       }
       await play.setToken(token);
       console.log('Spotify integration ready.');

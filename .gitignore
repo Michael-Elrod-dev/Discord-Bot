@@ -21,6 +21,9 @@ logs/
 *.log
 npm-debug.log*
 
+# Cookies
+*.txt
+
 # OS
 .DS_Store
 Thumbs.db
