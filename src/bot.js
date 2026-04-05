@@ -19,14 +19,18 @@ const PREFIX = process.env.PREFIX || '!';
 client.once('clientReady', async () => {
   if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
     try {
-      await play.setToken({
+      const token = {
         spotify: {
           client_id: process.env.SPOTIFY_CLIENT_ID,
           client_secret: process.env.SPOTIFY_CLIENT_SECRET,
           refresh_token: '',
           market: 'US',
         },
-      });
+      };
+      if (process.env.YOUTUBE_COOKIE) {
+        token.youtube = { cookie: process.env.YOUTUBE_COOKIE };
+      }
+      await play.setToken(token);
       console.log('Spotify integration ready.');
     } catch (err) {
       console.warn('Spotify init failed — Spotify links will not work.', err.message);
