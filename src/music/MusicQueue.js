@@ -78,6 +78,7 @@ class MusicQueue {
     try {
       const ytdlArgs = [
         '--format', 'bestaudio/best',
+        '--extractor-args', 'youtube:player_client=ios',
         '--output', '-',
         '--no-playlist',
         '--quiet',
