@@ -8,6 +8,10 @@ const {
   entersState,
 } = require('@discordjs/voice');
 const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+const COOKIE_FILE = path.join(__dirname, '..', '..', 'www.youtube.com_cookies.txt');
 
 class MusicQueue {
   constructor() {
@@ -74,12 +78,15 @@ class MusicQueue {
     try {
       const ytdlArgs = [
         '--format', 'bestaudio/best',
-        '--extractor-args', 'youtube:player_client=ios',
+        '--extractor-args', 'youtube:player_client=android',
         '--output', '-',
         '--no-playlist',
         '--quiet',
         '--no-warnings',
       ];
+      if (fs.existsSync(COOKIE_FILE)) {
+        ytdlArgs.push('--cookies', COOKIE_FILE);
+      }
       ytdlArgs.push(this.currentTrack.url);
 
       const ytdl = spawn(
