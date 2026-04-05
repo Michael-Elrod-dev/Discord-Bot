@@ -8,6 +8,10 @@ const {
   entersState,
 } = require('@discordjs/voice');
 const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+const COOKIE_FILE = path.join(__dirname, '..', '..', 'www.youtube.com_cookies.txt');
 
 class MusicQueue {
   constructor() {
@@ -72,16 +76,21 @@ class MusicQueue {
     this.currentTrack = this.tracks.shift();
 
     try {
+      const ytdlArgs = [
+        '--format', 'bestaudio[ext=webm]/bestaudio/best',
+        '--output', '-',
+        '--no-playlist',
+        '--quiet',
+        '--no-warnings',
+      ];
+      if (fs.existsSync(COOKIE_FILE)) {
+        ytdlArgs.push('--cookies', COOKIE_FILE);
+      }
+      ytdlArgs.push(this.currentTrack.url);
+
       const ytdl = spawn(
         process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp',
-        [
-          '--format', 'bestaudio[ext=webm]/bestaudio/best',
-          '--output', '-',
-          '--no-playlist',
-          '--quiet',
-          '--no-warnings',
-          this.currentTrack.url,
-        ],
+        ytdlArgs,
         { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
       );
 
